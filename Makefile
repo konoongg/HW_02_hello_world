@@ -4,7 +4,7 @@ KERNEL_DIR ?=/lib/modules/$(shell uname -r)/build
 DRV_NAME := my_module
 obj-m := $(DRV_NAME).o
 
-.PHONY: build run remove install uninstall clean
+.PHONY: build run remove install uninstall clean check
 
 build:
 	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) modules
@@ -27,3 +27,12 @@ uninstall:
 
 clean:
 	$(MAKE) -C $(KERNEL_DIR) M=$(PWD) clean
+
+check:
+	@echo "=== Запуск проверки модуля ==="
+	$(MAKE) remove
+	$(MAKE) build
+	$(MAKE) run
+	python3 ./check/check.py
+	$(MAKE) remove
+	$(MAKE) clean
