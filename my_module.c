@@ -3,13 +3,17 @@
 #include <linux/kernel.h>
 #include <linux/string.h>
 #include <linux/stat.h>
+#include <linux/ctype.h>
 
  // #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
 #define MAX_STR_SIZE 64
 
+#define is_letter(sym) ((sym >= 65 && sym <= 90) || (sym >= 97 && sym <= 122))
+
+
 static int idx = 0;
-static unsigned char ch_val = 'A';
+static u8 ch_val= 'A';
 static char my_str[MAX_STR_SIZE] = "Default string";
 
 /* my_str function */
@@ -37,17 +41,24 @@ MODULE_PARM_DESC(my_str, "String value (max 63 characters)");
 
 static int ch_val_set(const char *val, const struct kernel_param *kp)
 {
-    unsigned long tmp;
+    u8 tmp;
     int ret;
 
-    ret = kstrtoul(val, 10, &tmp);
+    ret = kstrtou8(val, 10, &tmp);
     if (ret)
+    {
+        pr_warn("ch_val '%s' is not a valid number (0-255)\n", val);
         return ret;
-    if (tmp > 255) {
-        pr_warn("ch_val %lu out of range (0-255)\n", tmp);
+    }
+
+    if (!is_letter(tmp))
+    {
+
+        pr_warn("ch_val must be a letter\n");
         return -EINVAL;
     }
-    ch_val = (unsigned char)tmp;
+
+    ch_val = tmp;
 
     pr_info("ch_val value = %c (%d)\n", ch_val, ch_val);
     my_str_update();
@@ -78,13 +89,14 @@ static int idx_set(const char *val, const struct kernel_param *kp)
     ret = kstrtoul(val, 10, &tmp);
     if(ret)
         return ret;
-    if (tmp > 64)
+
+    if (tmp >= MAX_STR_SIZE)
     {
         pr_warn("швч %lu out of range (0-63)\n", tmp);
         return -EINVAL;
     }
     
-    idx = (int)tmp;
+    idx = (int) tmp;
     pr_info("idx value = %d \n", idx);
     return 0;
 }
